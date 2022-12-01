@@ -13,8 +13,8 @@
       ></div>
       <div class="card-item__cover" :aria-label="imageCover">
         <img
-          v-if="currentCardBackground"
-          :src="currentCardBackground"
+          v-if="currentBackgroundImage"
+          :src="currentBackgroundImage"
           class="card-item__bg"
           alt="Background image"
         />
@@ -27,15 +27,13 @@
             alt="Card chip image"
           />
           <div class="card-item__type">
-            <transition name="slide-fade-up">
               <img
-                v-if="cardType"
-                :src="getCreditCardImage"
+                v-if="currentBrandImage"
+                :src="currentBrandImage"
                 :key="cardType"
                 :alt="`${cardType} brand image`"
                 class="card-item__typeImg"
               />
-            </transition>
           </div>
         </div>
         <label
@@ -145,8 +143,8 @@
     <div class="card-item__side -back">
       <div class="card-item__cover" :aria-label="imageCover">
         <img
-          v-if="currentCardBackground"
-          :src="currentCardBackground"
+          v-if="currentBackgroundImage"
+          :src="currentBackgroundImage"
           class="card-item__bg"
           alt="Background image"
         />
@@ -161,8 +159,8 @@
         </label>
         <div class="card-item__type">
           <img
-            v-if="cardType"
-            :src="getCreditCardImage"
+            v-if="currentBrandImage"
+            :src="currentBrandImage"
             class="card-item__typeImg"
             alt="Dark bar image"
           />
@@ -232,7 +230,9 @@ export default {
       dinersCardPlaceholder: '#### ###### ####',
       unionPayCardPlaceholder: '###### ####### ######',
       defaultCardPlaceholder: defaultPlaceholder,
-      currentPlaceholder: defaultPlaceholder
+      currentPlaceholder: defaultPlaceholder,
+      currentBrandImage: '',
+      currentBackgroundImage: ''
     }
   },
   watch: {
@@ -244,8 +244,21 @@ export default {
       }
     },
     cardType (val) {
+      if (val) {
+        const imageUrl = `../assets/images/${val}.png`
+        import(imageUrl).then(value => {
+          if (value.default !== this.currentBrandImage) {
+            this.currentBrandImage = value.default
+          }
+        })
+      }
       this.$emit('get-type', val)
       this.changePlaceholder()
+    },
+    'valueFields.cardNumber' (number) {
+      if (!number) {
+        this.currentBrandImage = ''
+      }
     }
   },
   mounted () {
@@ -267,10 +280,6 @@ export default {
       return number.startsWith('2131') || number.startsWith('1800')
         ? this.fifteenCardPlaceholder
         : this.defaultPlaceholder
-    },
-    getCreditCardImage () {
-      const path = require(`../assets/images/${this.cardType}.png`)
-      return path.default || path
     },
     cardType () {
       const acceptedTypes = [
@@ -342,13 +351,17 @@ export default {
         parseInt(numberImage) < 26 &&
         parseInt(numberImage) > 0
       )
-    },
-    currentCardBackground () {
+    }
+  },
+  methods: {
+    getCurrentCardBackground () {
       const numberImage = parseInt(this.backgroundImage)
 
       if (this.isBackgroundImageFromAssets) {
-        const path = require(`../assets/images/${numberImage}.jpg`)
-        return path.default || path
+        const file = `../assets/images/${numberImage}.jpg`
+        import(file).then(value => {
+          this.currentBackgroundImage = value.default
+        })
       }
 
       if (this.backgroundImage && !Number.isFinite(numberImage)) {
@@ -357,15 +370,12 @@ export default {
 
       if (this.hasRandomBackgrounds) {
         const random = Math.floor(Math.random() * 25 + 1)
-
-        const path = require(`../assets/images/${random}.jpg`)
-        return path.default || path
+        const file = `../assets/images/${random}.jpg`
+        import(file).then(value => {
+          this.currentBackgroundImage = value.default
+        })
       }
-
-      return null
-    }
-  },
-  methods: {
+    },
     addOrRemoveFieldListeners (event = 'addEventListener') {
       const self = this
       const fields = document.querySelectorAll('[data-card-field]')
@@ -396,6 +406,7 @@ export default {
     },
     init () {
       this.addOrRemoveFieldListeners()
+      this.getCurrentCardBackground()
     },
     destroy () {
       this.addOrRemoveFieldListeners('removeEventListener')

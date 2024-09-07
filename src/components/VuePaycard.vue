@@ -245,12 +245,8 @@ export default {
     },
     cardType (val) {
       if (val) {
-        const imageUrl = `../assets/images/${val}.png`
-        import(imageUrl).then(value => {
-          if (value.default !== this.currentBrandImage) {
-            this.currentBrandImage = value.default
-          }
-        })
+        const imageUrl = `/build/assets/images/${val}.png`
+        this.currentBrandImage = imageUrl
       }
       this.$emit('get-type', val)
       this.changePlaceholder()
